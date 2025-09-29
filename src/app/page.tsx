@@ -6,14 +6,17 @@ import {
   KeyboardEvent, // For key presses
   FocusEvent, // For focus/blur
   DragEvent, // For drag and drop
+  useEffect,
 } from 'react'
 //
+import { ListData } from '@/types/dataTypes'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import Nav from '@/components/nav/Nav'
 import { Input } from '@/components/ui/input'
 import { useState } from 'react'
 import { databaseService, Tracker } from '@/services/database'
+import ListDataComp from '@/components/ListDataComp'
 
 // Types
 type Role = 'Admin' | 'Manager' | 'Sales'
@@ -37,13 +40,12 @@ interface FormData {
   access: number
 }
 
-interface ListData {
-  id: number
-  name: string
-  roleAccess: number
-  pos: string
-  company: string
-}
+const ld: ListData[] = [
+  { id: 1, name: 'Sally', company: 'Microsoft', roleAccess: 5, pos: 'CEO' },
+  { id: 2, name: 'Su', company: 'Apple', roleAccess: 3, pos: 'Manager' },
+  { id: 3, name: 'Lisa', company: 'Apple', roleAccess: 2, pos: 'Sales' },
+  { id: 4, name: 'Denise', company: 'Microsoft', roleAccess: 1, pos: 'Temp' },
+]
 
 // imputs
 const inputs: InputConfig[] = [
@@ -57,20 +59,36 @@ const roles: Role[] = ['Admin', 'Manager', 'Sales']
 const status: Status[] = ['Active', 'In Active'] // Fixed typo: 'Acvive' -> 'Active'
 const access: Access[] = [1, 2, 3, 4, 5]
 
-// ======================
-// add in typeScript check
-// ======================
-const ld: ListData[] = [
-  { id: 1, name: 'Sally', company: 'Microsoft', roleAccess: 5, pos: 'CEO' },
-  { id: 2, name: 'Su', company: 'Apple', roleAccess: 3, pos: 'Manager' },
-  { id: 3, name: 'Lisa', company: 'Apple', roleAccess: 2, pos: 'Sales' },
-  { id: 4, name: 'Denise', company: 'Microsoft', roleAccess: 1, pos: 'Temp' },
-]
-
 // USE FORM DATA
 const data = new FormData()
 // const formData = new FormData(someFormElement);
 export default function Home() {
+  const [listData, setListData] = useState<ListData[]>(ld)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const res = await databaseService.getDocs()
+        console.log(res)
+
+        // Transform the Appwrite data to match ListData interface
+        const transformedData: ListData[] = res.rows.map((row: any) => ({
+          id: row.$id, // Map $id to id
+          name: `${row.firstName} ${row.lastName}`, // Combine names
+          roleAccess: row.access, // Map access to roleAccess
+          pos: row.role, // Map role to pos
+          company: row.company,
+        }))
+
+        setListData(transformedData)
+        setLoading(false)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    getData()
+    return () => {}
+  }, [])
   const [formData, setFormData] = useState<Partial<FormData>>({
     firstName: '',
     lastName: '',
@@ -79,8 +97,6 @@ export default function Home() {
     status: 'Active', // Default value
     access: 1,
   })
-
-  const [listData, setListData] = useState<ListData[]>(ld)
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -152,6 +168,14 @@ export default function Home() {
     // TypeScript performs type checking at the point of use,
     const res = await databaseService.createDoc(dataToSubmit)
     console.log(res)
+
+    // const transformedData: ListData[] = {
+    //   // id: row.$id, // Map $id to id
+    //   // name: `${row.firstName} ${row.lastName}`, // Combine names
+    //   // roleAccess: row.access, // Map access to roleAccess
+    //   // pos: row.role, // Map role to pos
+    //   // company: row.company,
+    // }
   }
 
   return (
@@ -226,28 +250,14 @@ export default function Home() {
         </Button>
       </form>
 
-      {/* TODO: TABLE TO DISPLAY THE RESULTS  */}
-
-      <div className='grid grid-cols-3 border-b p-2 mt-10'>
-        <div className='capitalize font-bold'>name</div>
-        <div className='capitalize font-bold'>company</div>
-        <div className='capitalize font-bold'>access</div>
-      </div>
-
       {/* =========  LIST DATA  ========= */}
-      <ul>
-        {listData.map((data) => {
-          return (
-            <li className='grid grid-cols-3 border-b p-2' key={data.id}>
-              <div>{data.name}</div>
-              <div>{data.company}</div>
-              <div>
-                ({data.roleAccess}) | {data.pos}
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+      {loading ? (
+        <div className='h-[100px]  grid place-items-center'>
+          <h1>Loading...</h1>
+        </div>
+      ) : (
+        <ListDataComp listData={listData} />
+      )}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { Query } from 'appwrite'
 import { tablesDB, ID } from './appwirte'
 
 export interface Tracker {
@@ -37,6 +38,13 @@ export const databaseService = {
   },
 
   async getDocs() {
-    // ...
+    return await tablesDB.listRows({
+      databaseId,
+      tableId,
+      //   queries: [
+      //     Query.equal('title', ['Avatar', 'Lord of the Rings']),
+      //     Query.greaterThan('year', 1999),
+      //   ],
+    })
   },
 }
