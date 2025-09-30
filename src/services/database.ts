@@ -6,10 +6,10 @@ export interface Tracker {
   $id: string
   $createdAt: string
   $updatedAt: string
-  $databaseId: string // Add this
-  $tableId: string // Add this
-  $permissions: string[] // Add this
-  $sequence: number // Add this
+  $databaseId: string
+  $tableId: string
+  $permissions: string[]
+  $sequence: number
   access: number
   company: string
   firstName: string
