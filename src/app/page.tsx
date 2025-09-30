@@ -162,21 +162,55 @@ export default function Home() {
       company: formData.company,
       role: formData.role,
       status: formData.status,
-      access: Number(formData.access), // Convert to string if your DB expects string
+      access: Number(formData.access),
     }
 
-    // TypeScript performs type checking at the point of use,
     const res = await databaseService.createDoc(dataToSubmit)
+
+    //========================================
+    // -- Type narrowing: check success first
+    //========================================
+    if (!res.success) {
+      console.error('Failed to create document:', res.error)
+      return
+    }
+
+    // Now TypeScript knows res has the 'data' property
     console.log(res)
 
-    // const transformedData: ListData[] = {
-    //   // id: row.$id, // Map $id to id
-    //   // name: `${row.firstName} ${row.lastName}`, // Combine names
-    //   // roleAccess: row.access, // Map access to roleAccess
-    //   // pos: row.role, // Map role to pos
-    //   // company: row.company,
-    // }
+    // Transform the response data to match ListData format
+    const newListItem: ListData = {
+      id: Number(res.data.$id),
+      name: `${res.data.firstName} ${res.data.lastName}`,
+      roleAccess: res.data.access,
+      pos: res.data.role,
+      company: res.data.company,
+    }
+
+    // Add the new item to the existing list
+    setListData((prevData) => [...prevData, newListItem])
+
+    // Clear the form after successful submission
+    setFormData({
+      firstName: '',
+      lastName: '',
+      company: '',
+      role: 'Admin',
+      status: 'Active',
+      access: 1,
+    })
   }
+
+  // Important: The Check Must Be TypeScript-Understandable
+  // TypeScript can only narrow types when you use checks it understands:
+  // typescript// ✅ TypeScript understands these:
+  // if (result.success) { }
+  // if (typeof x === 'string') { }
+  // if (x instanceof Error) { }
+  // if ('property' in object) { }
+
+  // // ❌ TypeScript can't understand this:
+  // if (myCustomCheck(result)) { }  // Custom function - TS doesn't know what it does
 
   return (
     <div className='max-w-[500px] mx-auto p-5'>

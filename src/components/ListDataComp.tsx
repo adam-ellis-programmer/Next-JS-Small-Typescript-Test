@@ -17,6 +17,10 @@ const ListDataComp = ({
     // ....
     return () => {}
   }, [])
+
+  if(listData.length === 0){
+    return <div className='text-center text-2xl mt-10'>no data to show yet</div>
+  }
   return (
     <>
       <div className='grid grid-cols-3 border-b p-2 mt-10'>
